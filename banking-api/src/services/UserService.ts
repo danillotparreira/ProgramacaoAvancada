@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import { prisma } from "../prisma";
+import { User } from "@prisma/client";
 
 class UserService {
 
@@ -9,9 +10,7 @@ class UserService {
             if (userExist) {
                 throw new Error("User already exists in the database.");
             }
-
             const hashPassword = await hash(password, 10);
-
             const user = await prisma.user.create({
                 data: {
                     name,
@@ -42,7 +41,7 @@ class UserService {
             return user;
         } catch (error) {
             console.log(`Error fetching user: ${error}`);
-            return error;
+            throw error;
         }
     }
 

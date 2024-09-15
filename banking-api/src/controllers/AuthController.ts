@@ -1,8 +1,9 @@
-import { NextFunction, Request, Response } from "express";
-import { verify } from "jsonwebtoken";
-import { Util } from "../utils/Utils";
-import { userService } from "../utils/DependencyContainer";
 import { compare } from "bcryptjs";
+import { NextFunction, Request, Response } from "express";
+import { sign, verify } from "jsonwebtoken";
+import { tokenDuration, tokenSecret, userService } from "../utils/DependencyContainer";
+import { Util } from "../utils/Utils";
+
 
 type TokenPayload = {
     id: String;
@@ -16,18 +17,15 @@ class AuthController {
         const msgError = "User or password invalid";
         try {
             const { email, password } = req.body;
-            console.log(userService)
             const user = await userService.findByEmail(email);
-            if (!user) { 
+            if (!user) {
                 return res.status(400).json({ error: msgError });
             }
-            
             const isValuePassword = await compare(password, user.password);
-
             if (!isValuePassword) {
                 return res.status(400).json({ error: msgError })
             }
-            const token = sign({ id: user.id, email: user.email }, "mudarEstaSenha", { expiresIn: "1m" });
+            const token = sign({ id: user.id, email: user.email }, tokenSecret, { expiresIn: tokenDuration });
 
             return res.status(200).json({ user: { id: user.id, email }, token });
             // return res.status(200).json({ user: { id: user.id, email, permission: ['create','read'] }, token });
@@ -46,7 +44,7 @@ class AuthController {
             // Bearer token
             const [, token] = authorization.split(" ");
 
-            const decoded = verify(token, "mudarEstaSenha");
+            const decoded = verify(token, tokenSecret);
             const { id } = decoded as TokenPayload;
             console.log(`ID: ${id}`);
             return next();
